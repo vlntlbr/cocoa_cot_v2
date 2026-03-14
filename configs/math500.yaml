@@ -1,0 +1,14 @@
+# MATH-500-specific configuration (inherits from base.yaml)
+_base_: base.yaml
+
+dataset:
+  name: "math500"
+  hf_path: "lighteval/MATH"
+  hf_split_config: "all"
+  question_field: "problem"
+  answer_field: "solution"
+  quality_metric: "math500_accuracy"
+  chain_format: "auto"
+
+sampling:
+  max_new_tokens: 1024     # competition math needs longer responses

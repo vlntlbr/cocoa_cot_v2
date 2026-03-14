@@ -1,0 +1,52 @@
+# Base configuration shared across all experiments
+# All dataset-specific configs inherit and override these values.
+
+# ── Sampling ──────────────────────────────────────────────────────────────────
+sampling:
+  M: 10                    # number of stochastic traces per input
+  temperature: 1.0
+  top_k: 50
+  top_p: 1.0
+  max_new_tokens: 512
+
+# ── Model ─────────────────────────────────────────────────────────────────────
+model:
+  name: "deepseek-ai/DeepSeek-R1-Distill-Llama-8B"
+  device: "cuda"
+  dtype: "bfloat16"
+  embedding_layer: 16      # middle layer for CoCoA-CoT Light features
+
+# ── Similarity ────────────────────────────────────────────────────────────────
+similarity:
+  answer_sim: "cross_encoder"              # for Û_cons_A
+  step_sim: "cross_encoder"               # for s_step in u_R
+  cross_encoder_model: "cross-encoder/stsb-roberta-large"
+  nli_model: "cross-encoder/nli-deberta-v3-large"
+  batch_size: 32
+
+# ── CoCoA-CoT ─────────────────────────────────────────────────────────────────
+cocoa_cot:
+  alpha: 0.5               # mixing: α·u_A + (1-α)·u_R
+  answer_confidence: "ppl" # one of: msp, ppl, mte
+
+# ── Evaluation ────────────────────────────────────────────────────────────────
+evaluation:
+  rejection_max: 0.5       # PRR computed up to 50% rejection
+  n_bins: 10               # ECE bins
+  seeds: [42, 123, 456]    # 3 seeds for all experiments
+  n_eval: 500              # examples per dataset for main evaluation
+  n_holdout: 2000          # examples for CoCoA-CoT Light training
+
+# ── CoCoA-CoT Light ───────────────────────────────────────────────────────────
+light:
+  hidden_dim: 512
+  dropout: 0.1
+  lr: 3.0e-4
+  batch_size: 64
+  epochs: 30
+  holdout_size: 2000       # unlabeled examples for auxiliary model training
+
+# ── Caching ───────────────────────────────────────────────────────────────────
+cache:
+  dir: "results/cache"
+  enabled: true

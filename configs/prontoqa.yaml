@@ -1,0 +1,14 @@
+# ProntoQA-specific configuration (inherits from base.yaml)
+_base_: base.yaml
+
+dataset:
+  name: "prontoqa"
+  hf_path: "EleutherAI/prontoqa"
+  hf_split_config: "default"
+  question_field: "question"
+  answer_field: "answer"
+  quality_metric: "gsm8k_accuracy"   # True/False exact match
+  chain_format: "auto"
+
+sampling:
+  max_new_tokens: 256

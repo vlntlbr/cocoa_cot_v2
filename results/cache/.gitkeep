@@ -1,0 +1,2 @@
+# This directory holds pickle generation caches and auxiliary model checkpoints.
+# Files are committed via .gitkeep — actual cache files are git-ignored.

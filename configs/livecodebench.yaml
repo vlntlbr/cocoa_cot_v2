@@ -1,0 +1,14 @@
+# LiveCodeBench-specific configuration (inherits from base.yaml)
+_base_: base.yaml
+
+dataset:
+  name: "livecodebench"
+  hf_path: "livecodebench/code_generation_lite"
+  hf_split_config: "default"
+  question_field: "question_content"
+  answer_field: "solutions"
+  quality_metric: "livecodebench_pass_at_1"
+  chain_format: "auto"
+
+sampling:
+  max_new_tokens: 1024    # code generation needs long context

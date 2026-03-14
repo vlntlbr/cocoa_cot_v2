@@ -1,0 +1,14 @@
+# GSM8K-specific configuration (inherits from base.yaml)
+_base_: base.yaml
+
+dataset:
+  name: "gsm8k"
+  hf_path: "gsm8k"
+  hf_split_config: "main"
+  question_field: "question"
+  answer_field: "answer"
+  quality_metric: "gsm8k_accuracy"
+  chain_format: "gsm8k"   # uses "####" answer separator
+
+sampling:
+  max_new_tokens: 512

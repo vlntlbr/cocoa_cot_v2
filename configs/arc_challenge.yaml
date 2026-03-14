@@ -1,0 +1,14 @@
+# ARC-Challenge-specific configuration (inherits from base.yaml)
+_base_: base.yaml
+
+dataset:
+  name: "arc_challenge"
+  hf_path: "allenai/ai2_arc"
+  hf_split_config: "ARC-Challenge"
+  question_field: "question"
+  answer_field: "answerKey"
+  quality_metric: "gsm8k_accuracy"   # exact match
+  chain_format: "auto"
+
+sampling:
+  max_new_tokens: 256

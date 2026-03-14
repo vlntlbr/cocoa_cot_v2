@@ -1,0 +1,14 @@
+# HotPotQA-specific configuration (inherits from base.yaml)
+_base_: base.yaml
+
+dataset:
+  name: "hotpotqa"
+  hf_path: "hotpot_qa"
+  hf_split_config: "distractor"
+  question_field: "question"
+  answer_field: "answer"
+  quality_metric: "alignscore"
+  chain_format: "auto"
+
+sampling:
+  max_new_tokens: 256      # answers tend to be shorter
