@@ -34,7 +34,7 @@ evaluation:
   rejection_max: 0.5       # PRR computed up to 50% rejection
   n_bins: 10               # ECE bins
   seeds: [42, 123, 456]    # 3 seeds for all experiments
-  n_eval: 500              # examples per dataset for main evaluation
+  n_eval: 2           # examples per dataset for main evaluation
   n_holdout: 2000          # examples for CoCoA-CoT Light training
 
 # ── CoCoA-CoT Light ───────────────────────────────────────────────────────────

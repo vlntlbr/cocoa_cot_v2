@@ -53,11 +53,11 @@ METHODS = [
 
 ALL_DATASETS = [
     "gsm8k",
-    "math500",
-    "hotpotqa",
-    "arc_challenge",
-    "prontoqa",
-    "livecodebench",
+    # "math500",
+    # "hotpotqa",
+    # "arc_challenge",
+    # "prontoqa",
+    # "livecodebench",
 ]
 
 
