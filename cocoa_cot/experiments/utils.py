@@ -231,7 +231,9 @@ def cache_generations(
     cache_path = Path(cache_dir)
     cache_path.mkdir(parents=True, exist_ok=True)
 
-    key_content = f"{model.model_name}|M{M}|t{temperature}|k{top_k}|p{top_p}|{len(prompts)}"
+    key_content = (
+        f"exp_cache_v2|{model.model_name}|M{M}|t{temperature}|k{top_k}|p{top_p}|{len(prompts)}"
+    )
     cache_key = hashlib.sha256(key_content.encode()).hexdigest()[:16]
     cache_file = cache_path / f"generations_{cache_key}.pkl"
 
@@ -241,11 +243,28 @@ def cache_generations(
             return pickle.load(f)
 
     logger.info("Generating outputs for %d prompts (M=%d)…", len(prompts), M)
+
+    def _preview_text(text: str) -> str:
+        cleaned = text.replace("Ġ", " ").replace("Ċ", "\n")
+        # Attempt to repair common UTF-8 mojibake (e.g., âĢĻ for apostrophes).
+        try:
+            repaired = cleaned.encode("latin-1").decode("utf-8")
+            if repaired.count(" ") >= cleaned.count(" "):
+                cleaned = repaired
+        except Exception:
+            pass
+        return " ".join(cleaned.split())
+
     results = []
-    for prompt in tqdm(prompts, desc="Generating"):
+    for i, prompt in enumerate(tqdm(prompts, desc="Generating")):
         greedy = model.generate_greedy(prompt)
         samples = model.generate_sample(
             prompt, M=M, temperature=temperature, top_k=top_k, top_p=top_p
+        )
+        cleaned_preview = _preview_text(greedy.text)
+        preview = cleaned_preview[:120]
+        tqdm.write(
+            f"[{i+1}/{len(prompts)}] {preview}{'...' if len(cleaned_preview) > 120 else ''}"
         )
         results.append({"greedy": greedy, "samples": samples, "prompt": prompt})
 

@@ -42,7 +42,7 @@ app = typer.Typer()
 console = Console()
 
 ALL_DATASETS = [
-    "gsm8k", "math500", "hotpotqa", "arc_challenge", "prontoqa", "livecodebench"
+    "gsm8k"#, "math500", "hotpotqa", "arc_challenge", "prontoqa", "livecodebench"
 ]
 
 
@@ -53,7 +53,7 @@ def main(
     model: Optional[str] = typer.Option(None),
     output: str = typer.Option("results/tables/light.csv"),
     seeds: list[int] = typer.Option([42, 123, 456]),
-    n_eval: int = typer.Option(500),
+    n_eval: int = typer.Option(50),
     n_holdout: int = typer.Option(2000),
     model_save_path: str = typer.Option("results/cache/aux_model.pt"),
     figure_dir: str = typer.Option("results/figures/light"),

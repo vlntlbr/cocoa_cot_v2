@@ -28,6 +28,9 @@ from cocoa_cot.parsing.chain_parser import ChainParser
 logger = logging.getLogger(__name__)
 
 
+CACHE_FORMAT_VERSION = "hfmodel_decode_v2"
+
+
 class HFModel(BaseModel):
     """White-box HuggingFace model wrapper.
 
@@ -90,7 +93,7 @@ class HFModel(BaseModel):
         device_map = "auto" if self.device == "auto" else None
         self._model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
-            torch_dtype=torch_dtype,
+            dtype=torch_dtype,
             device_map=device_map,
             trust_remote_code=True,
         )
@@ -152,15 +155,19 @@ class HFModel(BaseModel):
 
         self._load()
         outputs = []
-        for _ in range(M):
-            out = self._generate_single(
-                prompt,
-                do_sample=True,
-                temperature=temperature,
-                top_k=top_k,
-                top_p=top_p,
-            )
-            outputs.append(out)
+        for i in range(M):
+            try:
+                out = self._generate_single(
+                    prompt,
+                    do_sample=True,
+                    temperature=temperature,
+                    top_k=top_k,
+                    top_p=top_p,
+                )
+                outputs.append(out)
+            except Exception as e:
+                logger.warning("Sample %d failed: %s. Using greedy fallback.", i+1, str(e))
+                outputs.append(self.generate_greedy(prompt))
 
         self._save_cache(cache_key, outputs)
         return outputs
@@ -240,14 +247,27 @@ class HFModel(BaseModel):
             output_scores=True,
             return_dict_in_generate=True,
             pad_token_id=self._tokenizer.pad_token_id,
+            repetition_penalty=1.1,
+            max_time=60.0,
         )
         if do_sample:
             gen_kwargs["temperature"] = temperature
             gen_kwargs["top_k"] = top_k
             gen_kwargs["top_p"] = top_p
+        else:
+            # Some model configs carry sampling defaults; clear them for greedy decode.
+            gen_kwargs["temperature"] = None
+            gen_kwargs["top_p"] = None
 
         with torch.no_grad():
-            gen_out = self._model.generate(**gen_kwargs)
+            try:
+                gen_out = self._model.generate(**gen_kwargs)
+            except Exception as e:
+                logger.warning("Generation failed: %s. Returning greedy fallback.", str(e))
+                # Fallback to greedy if sampling fails
+                gen_kwargs_greedy = {k: v for k, v in gen_kwargs.items() if k not in ["temperature", "top_k", "top_p", "max_time"]}
+                gen_kwargs_greedy["do_sample"] = False
+                gen_out = self._model.generate(**gen_kwargs_greedy)
 
         # Extract generated token IDs (excluding input)
         generated_ids = gen_out.sequences[0][input_length:].tolist()
@@ -271,8 +291,15 @@ class HFModel(BaseModel):
             entropy = -(probs * log_probs).sum().item()
             token_entropies.append(entropy)
 
-        # Decode full text
-        full_text = self._tokenizer.decode(generated_ids, skip_special_tokens=True)
+        # Decode full text.
+        full_text = self._tokenizer.decode(
+            generated_ids,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=True,
+        )
+        # GPT-2/LLaMA BPE tokenizers encode spaces as Ġ (U+0120) and newlines
+        # as Ċ (U+010A). decode() does not always strip these, so we do it here.
+        full_text = full_text.replace('Ġ', ' ').replace('ĊĊ', '\n\n').replace('Ċ', '\n')
 
         # Parse chain and answer
         chain_text, answer_text = self.parser.parse(full_text, format="auto")
@@ -386,7 +413,7 @@ class HFModel(BaseModel):
 
     def _cache_key(self, prompt: str, tag: str) -> str:
         """Generate a deterministic cache key."""
-        content = f"{self.model_name}|{tag}|{prompt}"
+        content = f"{CACHE_FORMAT_VERSION}|{self.model_name}|{tag}|{prompt}"
         return hashlib.sha256(content.encode()).hexdigest()
 
     def _load_cache(self, key: str) -> Optional[object]:

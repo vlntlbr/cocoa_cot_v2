@@ -69,19 +69,23 @@ def main(
     output: str = typer.Option("results/tables/main_results.csv", help="Output CSV path"),
     seeds: list[int] = typer.Option([42, 123, 456], help="Random seeds"),
     n_eval: int = typer.Option(500, help="Number of eval examples per dataset"),
+    max_new_tokens: Optional[int] = typer.Option(None, help="Override max generated tokens"),
     methods: list[str] = typer.Option(METHODS, help="Methods to evaluate"),
 ) -> None:
     """Run main results experiment (Table 1)."""
     logging.basicConfig(level=logging.INFO)
     cfg = load_config(config)
 
-    # Override n_eval in cfg
+    # Override eval/generation settings in cfg
     cfg.setdefault("evaluation", {})["n_eval"] = n_eval
+    if max_new_tokens is not None:
+        cfg.setdefault("sampling", {})["max_new_tokens"] = max_new_tokens
 
     console.rule("[bold blue]CoCoA-CoT Main Experiment")
     console.print(f"Datasets: {datasets}")
     console.print(f"Methods:  {methods}")
     console.print(f"Seeds:    {seeds}")
+    console.print(f"Max new tokens: {cfg.get('sampling', {}).get('max_new_tokens', 'default')}")
 
     # ── Build shared components ───────────────────────────────────────────────
     hf_model = build_model(cfg, model_name=model)
